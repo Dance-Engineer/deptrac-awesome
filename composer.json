@@ -1,0 +1,19 @@
+{
+  "name": "dance-engineer/deptrac-awesome",
+  "description": "description",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Patrick Kusebauch",
+      "email": "patrick.kusebauch@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "DanceEngineer\\DeptracAwesome\\": "src"
+    }
+  },
+  "require": {
+    "qossmic/deptrac": "dev-main"
+  }
+}
