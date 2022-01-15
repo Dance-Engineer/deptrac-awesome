@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DanceEngineer\DeptracAwesome;
 
+use phpDocumentor\GraphViz\AttributeNotFound;
 use phpDocumentor\GraphViz\Edge;
 use phpDocumentor\GraphViz\Exception;
 use phpDocumentor\GraphViz\Graph;
@@ -23,6 +24,8 @@ use function tempnam;
 
 abstract class GraphVizOutputFormatter implements OutputFormatterInterface
 {
+    protected const VIOLATION_EDGE_COLOR = 'red';
+
     public static function getConfigName(): string
     {
         return 'graphviz';
@@ -152,6 +155,8 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
     ): void {
         $hiddenLayers = $outputConfig->getHiddenLayers();
 
+        /** @var array<Edge> $edges */
+        $edges = [];
         foreach ($layersDependOnLayers as $layer => $layersDependOn) {
             if (in_array($layer, $hiddenLayers, true)) {
                 continue;
@@ -164,16 +169,34 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                 if ($outputConfig->getPointToGroups() && $graph->hasGraph($this->getSubgraphName($layerDependOn))) {
                     $edge->setAttribute('lhead', $this->getSubgraphName($layerDependOn));
                 }
-                $graph->link($edge);
                 $label = 0;
                 if (isset($layerViolations[$layer][$layerDependOn])) {
                     $label += $layerViolations[$layer][$layerDependOn];
-                    $edge->setAttribute('color', 'red');
+                    $edge->setAttribute('color', self::VIOLATION_EDGE_COLOR);
                 } else {
                     $label += $layerDependOnCount;
                 }
                 $edge->setAttribute('label', (string) $label);
+                $edges[$nodes[$layer] . '|' . $nodes[$layerDependOn]] = $edge;
             }
+        }
+        foreach ($edges as $key => &$edge) {
+            [$before, $after] = explode('|', $key, 2);
+            $otherKey = $after.'|'.$before;
+            try {
+                if(array_key_exists($otherKey, $edges) && $edge->getAttribute('color')->getValue() !== self::VIOLATION_EDGE_COLOR) {
+                    $other = $edges[$otherKey];
+                    $color = $other->getAttribute('color')->getValue();
+                    if($color !== self::VIOLATION_EDGE_COLOR) {
+                        $label = $other->getAttribute('label')->getValue();
+                        $edge->setAttribute('label', (string)((int)$label + (int)$edge->getAttribute('label')->getValue()));
+                        $edge->setAttribute('dir', 'both');
+                        $edge->setAttribute('color', 'blue');
+                        unset($edges[$otherKey]);
+                    }
+                }
+            } catch (AttributeNotFound $_) {}
+            $graph->link($edge);
         }
     }
 
