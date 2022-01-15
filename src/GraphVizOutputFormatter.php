@@ -184,18 +184,28 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
             [$before, $after] = explode('|', $key, 2);
             $otherKey = $after.'|'.$before;
             try {
-                if(array_key_exists($otherKey, $edges) && $edge->getAttribute('color')->getValue() !== self::VIOLATION_EDGE_COLOR) {
-                    $other = $edges[$otherKey];
-                    $color = $other->getAttribute('color')->getValue();
-                    if($color !== self::VIOLATION_EDGE_COLOR) {
-                        $label = $other->getAttribute('label')->getValue();
-                        $edge->setAttribute('label', (string)((int)$label + (int)$edge->getAttribute('label')->getValue()));
+                $edgeColor = $edge->getAttribute('color')->getValue();
+            } catch (AttributeNotFound $_) {
+                $edgeColor = null;
+            }
+            if (array_key_exists($otherKey, $edges) && $edgeColor !== self::VIOLATION_EDGE_COLOR) {
+                $otherEdge = $edges[$otherKey];
+                try {
+                    $otherEdgeColor = $otherEdge->getAttribute('color')->getValue();
+                } catch (AttributeNotFound $_) {
+                    $otherEdgeColor = null;
+                }
+                if ($otherEdgeColor !== self::VIOLATION_EDGE_COLOR) {
+                    try {
+                        $label = $otherEdge->getAttribute('label')->getValue();
+                        $edge->setAttribute('label',(string)((int)$label + (int)$edge->getAttribute('label')->getValue()));
                         $edge->setAttribute('dir', 'both');
                         $edge->setAttribute('color', 'blue');
                         unset($edges[$otherKey]);
+                    } catch (AttributeNotFound $_) {
                     }
                 }
-            } catch (AttributeNotFound $_) {}
+            }
             $graph->link($edge);
         }
     }
