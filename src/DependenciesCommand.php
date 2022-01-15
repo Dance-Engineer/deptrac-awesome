@@ -76,7 +76,7 @@ final class DependenciesCommand extends Command
                 $this->fileResolver->resolve($configuration),
                 $configuration->getAnalyser()
             );
-            $target = $input->getArgument('layer');
+            $target = $input->getArgument('targetLayer');
             $result        = $this->getDependencies(
                 $this->resolver->resolve($astMap, $configuration->getAnalyser()),
                 $this->tokenLayerResolverFactory->create($configuration, $astMap),
