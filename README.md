@@ -42,7 +42,7 @@ services:
 ```
 
 ### DependenciesCommand
-Shows you all dependencies of your layer. You can optionally specify a target layer:
+Shows you all dependencies of your layer. You can optionally specify a target layer to get only dependencies from one to the other:
 ```shell
 deptrac.php dependencies <layer> <?target layer>
 ```
