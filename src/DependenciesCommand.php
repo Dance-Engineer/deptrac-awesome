@@ -61,6 +61,7 @@ final class DependenciesCommand extends Command
         parent::configure();
 
         $this->addArgument('layer', InputArgument::REQUIRED, 'Layer to debug');
+        $this->addArgument('targetLayer', InputArgument::OPTIONAL, 'Target layer to filter dependencies to only one layer');
         $this->addOption('depfile', null, InputOption::VALUE_OPTIONAL, 'Path to the depfile');
     }
 
@@ -75,10 +76,12 @@ final class DependenciesCommand extends Command
                 $this->fileResolver->resolve($configuration),
                 $configuration->getAnalyser()
             );
+            $target = $input->getArgument('layer');
             $result        = $this->getDependencies(
                 $this->resolver->resolve($astMap, $configuration->getAnalyser()),
                 $this->tokenLayerResolverFactory->create($configuration, $astMap),
-                (string)$input->getArgument('layer')
+                (string)$input->getArgument('layer'),
+                $target === null ? null : (string)$target
             );
 
             foreach ($result as $item) {
@@ -123,7 +126,8 @@ final class DependenciesCommand extends Command
     private function getDependencies(
         Result $dependencyResult,
         TokenLayerResolverInterface $tokenLayerResolver,
-        string $layer
+        string $layer,
+        ?string $targetLayer
     ): array {
         $result = [];
         foreach ($dependencyResult->getDependenciesAndInheritDependencies() as $dependency) {
@@ -131,7 +135,7 @@ final class DependenciesCommand extends Command
             if (in_array($layer, $dependantLayerNames, true)) {
                 $dependeeLayerNames = $tokenLayerResolver->getLayersByTokenName($dependency->getDependee());
                 foreach ($dependeeLayerNames as $dependeeLayerName) {
-                    if ($layer === $dependeeLayerName) {
+                    if ($layer === $dependeeLayerName || ($targetLayer !== null && $targetLayer !== $dependeeLayerName)) {
                         continue;
                     }
                     $result[$dependeeLayerName][] = new Violation($dependency, $layer, $dependeeLayerName);
