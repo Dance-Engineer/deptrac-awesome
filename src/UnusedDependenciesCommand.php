@@ -56,7 +56,13 @@ final class UnusedDependenciesCommand extends Command
     protected function configure(): void
     {
         parent::configure();
-        $this->addOption('depfile', null, InputOption::VALUE_OPTIONAL, 'Path to the depfile');
+        $this->addOption(
+            'depfile',
+            null,
+            InputOption::VALUE_REQUIRED,
+            '!deprecated: use --config-file instead - Path to the depfile',
+            getcwd().DIRECTORY_SEPARATOR.'depfile.yaml'
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

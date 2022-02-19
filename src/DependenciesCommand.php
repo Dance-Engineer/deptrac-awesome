@@ -62,7 +62,13 @@ final class DependenciesCommand extends Command
 
         $this->addArgument('layer', InputArgument::REQUIRED, 'Layer to debug');
         $this->addArgument('targetLayer', InputArgument::OPTIONAL, 'Target layer to filter dependencies to only one layer');
-        $this->addOption('depfile', null, InputOption::VALUE_OPTIONAL, 'Path to the depfile');
+        $this->addOption(
+            'depfile',
+            null,
+            InputOption::VALUE_REQUIRED,
+            '!deprecated: use --config-file instead - Path to the depfile',
+            getcwd().DIRECTORY_SEPARATOR.'depfile.yaml'
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
