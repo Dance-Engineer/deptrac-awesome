@@ -50,8 +50,10 @@ deptrac.php dependencies <layer> <?target layer>
 ### UnusedDependenciesCommand
 Show you all the allowed dependencies that are currently not being taken advantage of:
 ```shell
-deptrac.php unused
+deptrac.php unused <?--limit=0>
 ```
+
+You can optionally specify a limit of how many times can be the dependency used to be considered unused. This is useful if you want to find dependencies that are barely used and may be a prime candidate to get rid of. 
 
 ### Graphviz formatters
 Improved Graphviz formatters with these additional features:

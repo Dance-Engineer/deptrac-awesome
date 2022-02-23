@@ -63,6 +63,7 @@ final class UnusedDependenciesCommand extends Command
             '!deprecated: use --config-file instead - Path to the depfile',
             getcwd().DIRECTORY_SEPARATOR.'depfile.yaml'
         );
+        $this->addOption('limit', 'l', InputOption::VALUE_OPTIONAL, 'How many times can it be used to be considered unused', 0);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -97,7 +98,7 @@ final class UnusedDependenciesCommand extends Command
                 }
             }
 
-            $outputStyle->table(['Unused'], $this->prepareOutputTable($layerNames));
+            $outputStyle->table(['Unused'], $this->prepareOutputTable($layerNames, (int) $input->getOption('limit')));
             return self::SUCCESS;
         } catch (\Exception $exception) {
             $outputStyle->error($exception->getMessage());
@@ -129,13 +130,17 @@ final class UnusedDependenciesCommand extends Command
      * @param  array<string, array<string, int>>  $layerNames
      * @return array<array{string}}>
      */
-    private function prepareOutputTable(array $layerNames): array
+    private function prepareOutputTable(array $layerNames, int $limit): array
     {
         $rows = [];
         foreach ($layerNames as $dependantLayerName => $dependeeLayers) {
             foreach ($dependeeLayers as $dependeeLayerName => $numberOfDependencies) {
-                if ($numberOfDependencies === 0) {
-                    $rows[] = ["<info>$dependantLayerName</info> is not dependant on <info>$dependeeLayerName</info>"];
+                if($numberOfDependencies <= $limit) {
+                    if ($numberOfDependencies === 0) {
+                        $rows[] = ["<info>$dependantLayerName</info> is not dependant on <info>$dependeeLayerName</info>"];
+                    } else {
+                        $rows[] = ["<info>$dependantLayerName</info> is dependant <info>$dependeeLayerName</info> $numberOfDependencies times"];
+                    }
                 }
             }
         }
