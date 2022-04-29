@@ -11,13 +11,13 @@ use phpDocumentor\GraphViz\Graph;
 use phpDocumentor\GraphViz\Node;
 use Qossmic\Deptrac\Configuration\ConfigurationGraphViz;
 use Qossmic\Deptrac\Console\Output;
-use Qossmic\Deptrac\OutputFormatter\OutputFormatterInput;
+use Qossmic\Deptrac\Configuration\OutputFormatterInput;
 use Qossmic\Deptrac\OutputFormatter\OutputFormatterInterface;
-use Qossmic\Deptrac\RulesetEngine\Context;
-use Qossmic\Deptrac\RulesetEngine\CoveredRule;
-use Qossmic\Deptrac\RulesetEngine\Rule;
-use Qossmic\Deptrac\RulesetEngine\Uncovered;
-use Qossmic\Deptrac\RulesetEngine\Violation;
+use Qossmic\Deptrac\Result\CoveredRule;
+use Qossmic\Deptrac\Result\LegacyResult;
+use Qossmic\Deptrac\Result\Rule;
+use Qossmic\Deptrac\Result\Uncovered;
+use Qossmic\Deptrac\Result\Violation;
 use RuntimeException;
 use function sys_get_temp_dir;
 use function tempnam;
@@ -26,22 +26,28 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
 {
     protected const VIOLATION_EDGE_COLOR = 'red';
 
-    public static function getConfigName(): string
+    /**
+     * @var array{hidden_layers?: string[], groups?: array<string, string[]>, pointToGroups?: bool}
+     */
+    private array $config;
+
+    /**
+     * @param array{graphviz?: array{hidden_layers?: string[], groups?: array<string, string[]>, pointToGroups?: bool}} $config
+     */
+    public function __construct(array $config)
     {
-        return 'graphviz';
+        $this->config = $config['graphviz'] ?? [];
     }
 
     public function finish(
-        Context $context,
+        LegacyResult $result,
         Output $output,
         OutputFormatterInput $outputFormatterInput
     ): void {
-        $layerViolations = $this->calculateViolations($context->violations());
-        $layersDependOnLayers = $this->calculateLayerDependencies($context->rules());
+        $layerViolations = $this->calculateViolations($result->violations());
+        $layersDependOnLayers = $this->calculateLayerDependencies($result->rules());
 
-        /** @var array{hidden_layers?: string[], groups?: array<string, string[]>, pointToGroups?: bool} $outputConfig */
-        $outputConfig = $outputFormatterInput->getConfig();
-        $outputConfig = ConfigurationGraphViz::fromArray($outputConfig);
+        $outputConfig = ConfigurationGraphViz::fromArray($this->config);
 
         $graph = Graph::create('');
         if ($outputConfig->getPointToGroups()) {
@@ -62,14 +68,14 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
     {
         $layerViolations = [];
         foreach ($violations as $violation) {
-            if (!isset($layerViolations[$violation->getDependantLayerName()])) {
-                $layerViolations[$violation->getDependantLayerName()] = [];
+            if (!isset($layerViolations[$violation->getDependerLayer()])) {
+                $layerViolations[$violation->getDependerLayer()] = [];
             }
 
-            if (!isset($layerViolations[$violation->getDependantLayerName()][$violation->getDependeeLayerName()])) {
-                $layerViolations[$violation->getDependantLayerName()][$violation->getDependeeLayerName()] = 1;
+            if (!isset($layerViolations[$violation->getDependerLayer()][$violation->getDependentLayer()])) {
+                $layerViolations[$violation->getDependerLayer()][$violation->getDependentLayer()] = 1;
             } else {
-                ++$layerViolations[$violation->getDependantLayerName()][$violation->getDependeeLayerName()];
+                ++$layerViolations[$violation->getDependerLayer()][$violation->getDependentLayer()];
             }
         }
 
@@ -87,8 +93,8 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
 
         foreach ($rules as $rule) {
             if ($rule instanceof CoveredRule) {
-                $layerA = $rule->getDependantLayerName();
-                $layerB = $rule->getDependeeLayerName();
+                $layerA = $rule->getDependerLayer();
+                $layerB = $rule->getDependentLayer();
 
                 if (!isset($layersDependOnLayers[$layerA])) {
                     $layersDependOnLayers[$layerA] = [];

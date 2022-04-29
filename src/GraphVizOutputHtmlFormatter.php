@@ -8,7 +8,7 @@ use LogicException;
 use phpDocumentor\GraphViz\Exception;
 use phpDocumentor\GraphViz\Graph;
 use Qossmic\Deptrac\Console\Output;
-use Qossmic\Deptrac\OutputFormatter\OutputFormatterInput;
+use Qossmic\Deptrac\Configuration\OutputFormatterInput;
 use RuntimeException;
 use function base64_encode;
 use function file_get_contents;

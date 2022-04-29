@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace DanceEngineer\DeptracAwesome;
 
 use phpDocumentor\GraphViz\Graph;
+use Qossmic\Deptrac\Configuration\OutputFormatterInput;
 use Qossmic\Deptrac\Console\Output;
-use Qossmic\Deptrac\OutputFormatter\OutputFormatterInput;
 
 final class GraphVizOutputDotFormatter extends GraphVizOutputFormatter
 {
