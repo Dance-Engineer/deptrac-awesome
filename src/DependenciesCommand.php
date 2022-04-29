@@ -5,17 +5,12 @@ declare(strict_types = 1);
 namespace DanceEngineer\DeptracAwesome;
 
 use Exception;
-use Qossmic\Deptrac\AstRunner\AstRunner;
-use Qossmic\Deptrac\Configuration\Loader;
-use Qossmic\Deptrac\Console\Command\DefaultDepFileTrait;
+use Qossmic\Deptrac\Analyser\AstMapExtractor;
+use Qossmic\Deptrac\Analyser\LayerForTokenAnalyser;
 use Qossmic\Deptrac\Console\Symfony\Style;
 use Qossmic\Deptrac\Console\Symfony\SymfonyOutput;
-use Qossmic\Deptrac\Dependency\Resolver;
-use Qossmic\Deptrac\Dependency\Result;
-use Qossmic\Deptrac\FileResolver;
-use Qossmic\Deptrac\RulesetEngine\Violation;
-use Qossmic\Deptrac\TokenLayerResolverFactory;
-use Qossmic\Deptrac\TokenLayerResolverInterface;
+use Qossmic\Deptrac\Dependency\DependencyResolver;
+use Qossmic\Deptrac\Result\Violation;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,35 +20,25 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 final class DependenciesCommand extends Command
 {
-    use DefaultDepFileTrait;
-
     public static $defaultName = 'dependencies';
 
     public static $defaultDescription = 'List layer dependencies';
 
-    private AstRunner $astRunner;
+    private AstMapExtractor $astMapExtractor;
 
-    private FileResolver $fileResolver;
+    private DependencyResolver $dependencyResolver;
 
-    private Loader $configurationLoader;
-
-    private Resolver $resolver;
-
-    private TokenLayerResolverFactory $tokenLayerResolverFactory;
+    private LayerForTokenAnalyser $layerForTokenAnalyser;
 
     public function __construct(
-        AstRunner $astRunner,
-        FileResolver $fileResolver,
-        Resolver $resolver,
-        TokenLayerResolverFactory $tokenLayerResolverFactory,
-        Loader $configurationLoader,
+        AstMapExtractor $astMapExtractor,
+        DependencyResolver $dependencyResolver,
+        LayerForTokenAnalyser $layerForTokenAnalyser
     ) {
-        $this->astRunner                 = $astRunner;
-        $this->fileResolver              = $fileResolver;
-        $this->resolver                  = $resolver;
-        $this->tokenLayerResolverFactory = $tokenLayerResolverFactory;
-        $this->configurationLoader       = $configurationLoader;
         parent::__construct();
+        $this->astMapExtractor = $astMapExtractor;
+        $this->dependencyResolver = $dependencyResolver;
+        $this->layerForTokenAnalyser = $layerForTokenAnalyser;
     }
 
     protected function configure(): void
@@ -62,30 +47,14 @@ final class DependenciesCommand extends Command
 
         $this->addArgument('layer', InputArgument::REQUIRED, 'Layer to debug');
         $this->addArgument('targetLayer', InputArgument::OPTIONAL, 'Target layer to filter dependencies to only one layer');
-        $this->addOption(
-            'depfile',
-            null,
-            InputOption::VALUE_REQUIRED,
-            '!deprecated: use --config-file instead - Path to the depfile',
-            getcwd().DIRECTORY_SEPARATOR.'depfile.yaml'
-        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $outputStyle = new Style(new SymfonyStyle($input, $output));
         try {
-            $configuration = $this->configurationLoader->load(
-                self::getConfigFile($input, new SymfonyOutput($output, $outputStyle))
-            );
-            $astMap        = $this->astRunner->createAstMapByFiles(
-                $this->fileResolver->resolve($configuration),
-                $configuration->getAnalyser()
-            );
             $target = $input->getArgument('targetLayer');
             $result        = $this->getDependencies(
-                $this->resolver->resolve($astMap, $configuration->getAnalyser()),
-                $this->tokenLayerResolverFactory->create($configuration, $astMap),
                 (string)$input->getArgument('layer'),
                 $target === null ? null : (string)$target
             );
@@ -112,11 +81,11 @@ final class DependenciesCommand extends Command
 
         $message = sprintf(
             '<info>%s</info> depends on <info>%s</info> (%s)',
-            $dependency->getDependant()
+            $dependency->getDepender()
                 ->toString(),
-            $dependency->getDependee()
+            $dependency->getDependent()
                 ->toString(),
-            $rule->getDependeeLayerName()
+            $rule->getDependentLayer()
         );
 
         $fileOccurrence = $rule->getDependency()
@@ -130,21 +99,22 @@ final class DependenciesCommand extends Command
      * @return array<string, array<Violation>>
      */
     private function getDependencies(
-        Result $dependencyResult,
-        TokenLayerResolverInterface $tokenLayerResolver,
         string $layer,
         ?string $targetLayer
     ): array {
         $result = [];
-        foreach ($dependencyResult->getDependenciesAndInheritDependencies() as $dependency) {
-            $dependantLayerNames = $tokenLayerResolver->getLayersByTokenName($dependency->getDependant());
-            if (in_array($layer, $dependantLayerNames, true)) {
-                $dependeeLayerNames = $tokenLayerResolver->getLayersByTokenName($dependency->getDependee());
-                foreach ($dependeeLayerNames as $dependeeLayerName) {
-                    if ($layer === $dependeeLayerName || ($targetLayer !== null && $targetLayer !== $dependeeLayerName)) {
+        $astMap = $this->astMapExtractor->extract();
+        $dependencies = $this->dependencyResolver->resolve($astMap);
+
+        foreach ($dependencies->getDependenciesAndInheritDependencies() as $dependency) {
+            $dependerLayerNames = $this->layerForTokenAnalyser->findLayerForToken($dependency->getDepender()->toString(), 'class-like');
+            if (in_array($layer, $dependerLayerNames, true)) {
+                $dependentLayerNames = $this->layerForTokenAnalyser->findLayerForToken($dependency->getDependent()->toString(), 'class-like');
+                foreach ($dependentLayerNames as $dependentLayerName) {
+                    if ($layer === $dependentLayerName || ($targetLayer !== null && $targetLayer !== $dependentLayerName)) {
                         continue;
                     }
-                    $result[$dependeeLayerName][] = new Violation($dependency, $layer, $dependeeLayerName);
+                    $result[$dependentLayerName][] = new Violation($dependency, $layer, $dependentLayerName);
                 }
             }
         }
