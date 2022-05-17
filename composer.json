@@ -15,5 +15,41 @@
   },
   "require": {
     "qossmic/deptrac": "dev-main"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^1.6",
+    "orklah/psalm-insane-comparison": "^1.0",
+    "phpstan/phpstan-deprecation-rules": "^1.0",
+    "phpstan/phpstan-strict-rules": "^1.0",
+    "psalm/attributes": "^0.1.0",
+    "rector/rector": "dev-main",
+    "roave/security-advisories": "dev-latest",
+    "symplify/easy-coding-standard": "dev-main",
+    "veewee/composer-run-parallel": "^1.0",
+    "slam/phpstan-extensions": "^6.0",
+    "ergebnis/phpstan-rules": "^1.0",
+    "vimeo/psalm": "^4.23"
+  },
+  "config": {
+    "discard-changes": true,
+    "bin-dir": "bin",
+    "sort-packages": true,
+    "platform-check": false
+  },
+  "scripts": {
+    "ci": "@parallel sa deps:test cs:test tests:test",
+    "sa": "@parallel sa:psalm sa:phpstan",
+    "deps": "php vendor/qossmic/deptrac/deptrac.php --config-file=deptrac.yaml",
+    "deps:test": "php vendor/qossmic/deptrac/deptrac.php --report-uncovered",
+    "deps:baseline": "php vendor/qossmic/deptrac/deptrac.php --report-uncovered --formatter=baseline --output=./deptrac.baseline.yaml",
+    "cs:test": "bin/ecs check",
+    "cs:clear": "bin/ecs check --clear-cache",
+    "cs:fix": "bin/ecs check --fix",
+    "sa:psalm": "bin/psalm --threads=6 --show-info=true",
+    "sa:psalm:errors": "bin/psalm --threads=6 --show-info=false",
+    "sa:psalm:cache": "bin/psalm --clear-cache",
+    "sa:phpstan": "bin/phpstan analyze",
+    "rector:test": "bin/rector process src --dry-run",
+    "rector:fix": "bin/rector process src"
   }
 }
