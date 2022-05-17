@@ -41,9 +41,6 @@
     "sa": "@parallel sa:psalm sa:phpstan",
     "deps": "php vendor/qossmic/deptrac/deptrac.php --config-file=deptrac.yaml",
     "deps:test": "php vendor/qossmic/deptrac/deptrac.php --report-uncovered",
-    "deps:unassigned": "php vendor/qossmic/deptrac/deptrac.php debug:unassigned",
-    "deps:dump": "php vendor/qossmic/deptrac/deptrac.php --report-uncovered --formatter=graphviz-awesome-image --output=temp/deptrac.png",
-    "deps:dump-dot": "php vendor/qossmic/deptrac/deptrac.php --report-uncovered --formatter=graphviz-awesome-dot --output=temp/deptrac.dot",
     "deps:baseline": "php vendor/qossmic/deptrac/deptrac.php --report-uncovered --formatter=baseline --output=./deptrac.baseline.yaml",
     "cs:test": "bin/ecs check",
     "cs:clear": "bin/ecs check --clear-cache",
@@ -52,10 +49,6 @@
     "sa:psalm:errors": "bin/psalm --threads=6 --show-info=false",
     "sa:psalm:cache": "bin/psalm --clear-cache",
     "sa:phpstan": "bin/phpstan analyze",
-    "sa:phpstan:baseline": "bin/phpstan analyze --generate-baseline",
-    "tests:test": "bin/codecept run",
-    "tests:coverage": "bin/codecept run --coverage-html -q",
-    "tests:bdd": "bin/codecept run --coverage-html -q -g bdd",
     "rector:test": "bin/rector process src --dry-run",
     "rector:fix": "bin/rector process src"
   }
