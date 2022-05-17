@@ -1,4 +1,7 @@
 composer.phar
 /vendor/
-
+/bin
+.deptrac.cache
 composer.lock
+deptrac.dot
+deptrac.png

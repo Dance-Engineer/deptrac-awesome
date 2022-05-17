@@ -7,12 +7,14 @@ namespace DanceEngineer\DeptracAwesome;
 use LogicException;
 use phpDocumentor\GraphViz\Exception;
 use phpDocumentor\GraphViz\Graph;
-use Qossmic\Deptrac\Console\Output;
 use Qossmic\Deptrac\Configuration\OutputFormatterInput;
+use Qossmic\Deptrac\Console\Output;
 
 final class GraphVizOutputDisplayFormatter extends GraphVizOutputFormatter
 {
-    /** @var positive-int */
+    /**
+     * @var positive-int
+     */
     private const DELAY_OPEN = 2;
 
     public static function getName(): string
@@ -30,15 +32,15 @@ final class GraphVizOutputDisplayFormatter extends GraphVizOutputFormatter
             }
 
             if ('Windows' === PHP_OS_FAMILY) {
-                exec('start "" '.escapeshellarg($filename).' >NUL');
+                exec('start "" ' . escapeshellarg($filename) . ' >NUL');
             } elseif ('Darwin' === PHP_OS_FAMILY) {
-                exec('open '.escapeshellarg($filename).' > /dev/null 2>&1 &');
+                exec('open ' . escapeshellarg($filename) . ' > /dev/null 2>&1 &');
             } else {
-                exec('xdg-open '.escapeshellarg($filename).' > /dev/null 2>&1 &');
+                exec('xdg-open ' . escapeshellarg($filename) . ' > /dev/null 2>&1 &');
             }
             $next = microtime(true) + (float) self::DELAY_OPEN;
-        } catch (Exception $exception) {
-            throw new LogicException('Unable to display output: '.$exception->getMessage());
+        } catch (Exception|\RuntimeException $exception) {
+            throw new LogicException('Unable to display output: ' . $exception->getMessage());
         }
     }
 }

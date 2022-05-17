@@ -1,0 +1,48 @@
+parameters:
+  paths:
+    - ./src
+    - ./vendor
+  layers:
+    - name: Commands
+      collectors:
+        - type: bool
+          must:
+            - type: extends
+              value: 'Symfony\Component\Console\Command\Command'
+          must_not:
+            - type: directory
+              value: 'vendor'
+    - name: OutputFormatters
+      collectors:
+        - type: bool
+          must:
+            - type: implements
+              value: 'Qossmic\Deptrac\OutputFormatter\OutputFormatterInterface'
+          must_not:
+            - type: directory
+              value: 'vendor'
+    - name: TPCs
+      collectors:
+        - type: directory
+          value: 'vendor/qossmic/deptrac/src'
+  ruleset:
+    Commands:
+      - TPCs
+#          
+#services:
+#  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDisplayFormatter
+#    autowire: true
+#    tags:
+#      - output_formatter
+#  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDotFormatter
+#    autowire: true
+#    tags:
+#      - output_formatter
+#  - class: DanceEngineer\DeptracAwesome\GraphVizOutputHtmlFormatter
+#    autowire: true
+#    tags:
+#      - output_formatter
+#  - class: DanceEngineer\DeptracAwesome\GraphVizOutputImageFormatter
+#    autowire: true
+#    tags:
+#      - output_formatter

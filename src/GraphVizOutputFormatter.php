@@ -10,8 +10,9 @@ use phpDocumentor\GraphViz\Exception;
 use phpDocumentor\GraphViz\Graph;
 use phpDocumentor\GraphViz\Node;
 use Qossmic\Deptrac\Configuration\ConfigurationGraphViz;
-use Qossmic\Deptrac\Console\Output;
+use Qossmic\Deptrac\Configuration\FormatterConfiguration;
 use Qossmic\Deptrac\Configuration\OutputFormatterInput;
+use Qossmic\Deptrac\Console\Output;
 use Qossmic\Deptrac\OutputFormatter\OutputFormatterInterface;
 use Qossmic\Deptrac\Result\CoveredRule;
 use Qossmic\Deptrac\Result\LegacyResult;
@@ -31,12 +32,11 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
      */
     private array $config;
 
-    /**
-     * @param array{graphviz?: array{hidden_layers?: string[], groups?: array<string, string[]>, pointToGroups?: bool}} $config
-     */
-    public function __construct(array $config)
+    public function __construct(FormatterConfiguration $config)
     {
-        $this->config = $config['graphviz'] ?? [];
+        /** @var array{graphviz?: array{hidden_layers?: string[], groups?: array<string, string[]>, pointToGroups?: bool}} $extractedConfig */
+        $extractedConfig = $config->getConfigFor('graphviz');
+        $this->config = $extractedConfig;
     }
 
     public function finish(
@@ -60,6 +60,27 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
     }
 
     /**
+     * @throws Exception
+     * @throws \RuntimeException
+     */
+    protected function getTempImage(Graph $graph): string
+    {
+        $filename = tempnam(sys_get_temp_dir(), 'deptrac');
+        if ($filename === false) {
+            throw new RuntimeException('Unable to create temp file for output.');
+        }
+        $filename .= '.png';
+        $graph->export('png', $filename);
+
+        return $filename;
+    }
+
+    /**
+     * @throws \LogicException
+     */
+    abstract protected function output(Graph $graph, Output $output, OutputFormatterInput $outputFormatterInput): void;
+
+    /**
      * @param Violation[] $violations
      *
      * @return array<string, array<string, int>>
@@ -68,11 +89,11 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
     {
         $layerViolations = [];
         foreach ($violations as $violation) {
-            if (!isset($layerViolations[$violation->getDependerLayer()])) {
+            if (! array_key_exists($violation->getDependerLayer(), $layerViolations)) {
                 $layerViolations[$violation->getDependerLayer()] = [];
             }
 
-            if (!isset($layerViolations[$violation->getDependerLayer()][$violation->getDependentLayer()])) {
+            if (! array_key_exists($violation->getDependentLayer(), $layerViolations[$violation->getDependerLayer()])) {
                 $layerViolations[$violation->getDependerLayer()][$violation->getDependentLayer()] = 1;
             } else {
                 ++$layerViolations[$violation->getDependerLayer()][$violation->getDependentLayer()];
@@ -96,11 +117,11 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                 $layerA = $rule->getDependerLayer();
                 $layerB = $rule->getDependentLayer();
 
-                if (!isset($layersDependOnLayers[$layerA])) {
+                if (! array_key_exists($layerA, $layersDependOnLayers)) {
                     $layersDependOnLayers[$layerA] = [];
                 }
 
-                if (!isset($layersDependOnLayers[$layerA][$layerB])) {
+                if (! array_key_exists($layerB, $layersDependOnLayers[$layerA])) {
                     $layersDependOnLayers[$layerA][$layerB] = 1;
                     continue;
                 }
@@ -108,7 +129,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                 ++$layersDependOnLayers[$layerA][$layerB];
             } elseif ($rule instanceof Uncovered) {
                 $layer = $rule->getLayer();
-                if (!isset($layersDependOnLayers[$layer])) {
+                if (! array_key_exists($layer, $layersDependOnLayers)) {
                     $layersDependOnLayers[$layer] = [];
                 }
             }
@@ -130,7 +151,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
             if (in_array($layer, $hiddenLayers, true)) {
                 continue;
             }
-            if (!isset($nodes[$layer])) {
+            if (! array_key_exists($layer, $nodes)) {
                 $nodes[$layer] = new Node($layer);
             }
 
@@ -138,7 +159,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                 if (in_array($layerDependOn, $hiddenLayers, true)) {
                     continue;
                 }
-                if (!isset($nodes[$layerDependOn])) {
+                if (! array_key_exists($layerDependOn, $nodes)) {
                     $nodes[$layerDependOn] = new Node($layerDependOn);
                 }
             }
@@ -161,7 +182,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
     ): void {
         $hiddenLayers = $outputConfig->getHiddenLayers();
 
-        /** @var array<Edge> $edges */
+        /** @var array<string, Edge> $edges */
         $edges = [];
         foreach ($layersDependOnLayers as $layer => $layersDependOn) {
             if (in_array($layer, $hiddenLayers, true)) {
@@ -176,35 +197,41 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                     $edge->setAttribute('lhead', $this->getSubgraphName($layerDependOn));
                 }
                 $label = 0;
-                if (isset($layerViolations[$layer][$layerDependOn])) {
+                if (array_key_exists($layerDependOn, $layerViolations[$layer])) {
                     $label += $layerViolations[$layer][$layerDependOn];
                     $edge->setAttribute('color', self::VIOLATION_EDGE_COLOR);
                 } else {
                     $label += $layerDependOnCount;
                 }
                 $edge->setAttribute('label', (string) $label);
-                $edges[$nodes[$layer] . '|' . $nodes[$layerDependOn]] = $edge;
+                $edges[(string) $nodes[$layer] . '|' . (string) $nodes[$layerDependOn]] = $edge;
             }
         }
         foreach ($edges as $key => &$edge) {
             [$before, $after] = explode('|', $key, 2);
-            $otherKey = $after.'|'.$before;
+            $otherKey = $after . '|' . $before;
             try {
-                $edgeColor = $edge->getAttribute('color')->getValue();
+                $edgeColor = $edge->getAttribute('color')
+                    ->getValue();
             } catch (AttributeNotFound $_) {
                 $edgeColor = null;
             }
             if (array_key_exists($otherKey, $edges) && $edgeColor !== self::VIOLATION_EDGE_COLOR) {
                 $otherEdge = $edges[$otherKey];
                 try {
-                    $otherEdgeColor = $otherEdge->getAttribute('color')->getValue();
+                    $otherEdgeColor = $otherEdge->getAttribute('color')
+                        ->getValue();
                 } catch (AttributeNotFound $_) {
                     $otherEdgeColor = null;
                 }
                 if ($otherEdgeColor !== self::VIOLATION_EDGE_COLOR) {
                     try {
-                        $label = $otherEdge->getAttribute('label')->getValue();
-                        $edge->setAttribute('label',(string)((int)$label + (int)$edge->getAttribute('label')->getValue()));
+                        $label = $otherEdge->getAttribute('label')
+                            ->getValue();
+                        $edge->setAttribute(
+                            'label',
+                            (string) ((int) $label + (int) $edge->getAttribute('label')->getValue())
+                        );
                         $edge->setAttribute('dir', 'both');
                         $edge->setAttribute('color', 'blue');
                         unset($edges[$otherKey]);
@@ -240,25 +267,8 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
         }
     }
 
-    /**
-     * @throws Exception
-     */
-    protected function getTempImage(Graph $graph): string
-    {
-        $filename = tempnam(sys_get_temp_dir(), 'deptrac');
-        if (false === $filename) {
-            throw new RuntimeException('Unable to create temp file for output.');
-        }
-        $filename .= '.png';
-        $graph->export('png', $filename);
-
-        return $filename;
-    }
-
     private function getSubgraphName(string $groupName): string
     {
-        return 'cluster_'.$groupName;
+        return 'cluster_' . $groupName;
     }
-
-    abstract protected function output(Graph $graph, Output $output, OutputFormatterInput $outputFormatterInput): void;
 }

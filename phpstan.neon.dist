@@ -1,0 +1,40 @@
+includes:
+	- vendor/phpstan/phpstan/conf/bleedingEdge.neon
+	- vendor/phpstan/phpstan-deprecation-rules/rules.neon
+	- vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+	reportUnmatchedIgnoredErrors: true
+	checkMissingIterableValueType: true
+	checkGenericClassInNonGenericObjectType: true
+	checkMissingCallableSignature: true
+	level: 8 #TODO: @Incomplete: Make it MAX (Patrick Kusebauch @ 24.11.21)
+	paths:
+		- src
+	exceptions:
+		implicitThrows: false
+		uncheckedExceptionClasses:
+			- LogicException
+		check:
+			missingCheckedExceptionInThrows: true
+			tooWideThrowType: true
+
+services:
+	-
+		class: Ergebnis\PHPStan\Rules\Classes\FinalRule
+		arguments:
+			allowAbstractClasses: true
+			classesNotRequiredToBeAbstractOrFinal: []
+		tags:
+			- phpstan.rules.rule
+	-
+		class: SlamPhpStan\MissingClosureParameterTypehintRule
+		tags:
+			- phpstan.rules.rule
+rules:
+	- Ergebnis\PHPStan\Rules\Expressions\NoCompactRule
+	- Ergebnis\PHPStan\Rules\Expressions\NoEmptyRule
+	- Ergebnis\PHPStan\Rules\Expressions\NoErrorSuppressionRule
+	- Ergebnis\PHPStan\Rules\Expressions\NoEvalRule
+	- Ergebnis\PHPStan\Rules\Expressions\NoIssetRule
+	- Ergebnis\PHPStan\Rules\Files\DeclareStrictTypesRule
