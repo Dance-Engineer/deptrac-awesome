@@ -32,6 +32,10 @@ parameters:
       - TPCs
 
 services:
+  - class: DanceEngineer\DeptracAwesome\DependenciesCommand
+    autowire: true
+    tags:
+      - console.command
   - class: DanceEngineer\DeptracAwesome\UnusedDependenciesCommand
     autowire: true
     tags:
