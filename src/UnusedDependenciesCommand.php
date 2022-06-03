@@ -1,150 +1,218 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
-//namespace DanceEngineer\DeptracAwesome;
-//
-//use Qossmic\Deptrac\AstRunner\AstRunner;
-//use Qossmic\Deptrac\Configuration\Configuration;
-//use Qossmic\Deptrac\Configuration\ConfigurationLayer;
-//use Qossmic\Deptrac\Configuration\Loader;
-//use Qossmic\Deptrac\Console\Command\DefaultDepFileTrait;
-//use Qossmic\Deptrac\Console\Symfony\Style;
-//use Qossmic\Deptrac\Console\Symfony\SymfonyOutput;
-//use Qossmic\Deptrac\Dependency\Resolver;
-//use Qossmic\Deptrac\FileResolver;
-//use Qossmic\Deptrac\TokenLayerResolverFactory;
-//use Symfony\Component\Console\Command\Command;
-//use Symfony\Component\Console\Input\InputInterface;
-//use Symfony\Component\Console\Input\InputOption;
-//use Symfony\Component\Console\Output\OutputInterface;
-//use Symfony\Component\Console\Style\SymfonyStyle;
-//
-//final class UnusedDependenciesCommand extends Command
-//{
-//    use DefaultDepFileTrait;
-//
-//    public static $defaultName = 'unused';
-//
-//    public static $defaultDescription = 'List unused layer dependencies';
-//
-//    private AstRunner $astRunner;
-//
-//    private FileResolver $fileResolver;
-//
-//    private Loader $configurationLoader;
-//
-//    private Resolver $resolver;
-//
-//    private TokenLayerResolverFactory $tokenLayerResolverFactory;
-//
-//    public function __construct(
-//        AstRunner $astRunner,
-//        FileResolver $fileResolver,
-//        Resolver $resolver,
-//        TokenLayerResolverFactory $tokenLayerResolverFactory,
-//        Loader $configurationLoader,
-//    ) {
-//        $this->astRunner                 = $astRunner;
-//        $this->fileResolver              = $fileResolver;
-//        $this->resolver                  = $resolver;
-//        $this->tokenLayerResolverFactory = $tokenLayerResolverFactory;
-//        $this->configurationLoader       = $configurationLoader;
-//        parent::__construct();
-//    }
-//
-//    protected function configure(): void
-//    {
-//        parent::configure();
-//        $this->addOption(
-//            'depfile',
-//            null,
-//            InputOption::VALUE_REQUIRED,
-//            '!deprecated: use --config-file instead - Path to the depfile',
-//            getcwd().DIRECTORY_SEPARATOR.'depfile.yaml'
-//        );
-//        $this->addOption('limit', 'l', InputOption::VALUE_OPTIONAL, 'How many times can it be used to be considered unused', 0);
-//    }
-//
-//    protected function execute(InputInterface $input, OutputInterface $output): int
-//    {
-//        $outputStyle = new Style(new SymfonyStyle($input, $output));
-//        try {
-//            $configuration = $this->configurationLoader->load(
-//                self::getConfigFile($input, new SymfonyOutput($output, $outputStyle))
-//            );
-//            $layerNames    = $this->getLayerNames($configuration);
-//
-//            $astMap             = $this->astRunner->createAstMapByFiles(
-//                $this->fileResolver->resolve($configuration),
-//                $configuration->getAnalyser()
-//            );
-//            $dependencyResult   = $this->resolver->resolve($astMap, $configuration->getAnalyser());
-//            $tokenLayerResolver = $this->tokenLayerResolverFactory->create($configuration, $astMap);
-//            foreach ($dependencyResult->getDependenciesAndInheritDependencies() as $dependency) {
-//                $dependantLayerNames = $tokenLayerResolver->getLayersByTokenName($dependency->getDependant());
-//                foreach ($dependantLayerNames as $dependantLayerName) {
-//                    $dependeeLayerNames = $tokenLayerResolver->getLayersByTokenName($dependency->getDependee());
-//                    foreach ($dependeeLayerNames as $dependeeLayerName) {
-//                        if (array_key_exists($dependantLayerName, $layerNames)
-//                            && array_key_exists(
-//                                $dependeeLayerName,
-//                                $layerNames[$dependantLayerName]
-//                            )
-//                        ) {
-//                            $layerNames[$dependantLayerName][$dependeeLayerName] += 1;
-//                        }
-//                    }
-//                }
-//            }
-//
-//            $outputStyle->table(['Unused'], $this->prepareOutputTable($layerNames, (int) $input->getOption('limit')));
-//            return self::SUCCESS;
-//        } catch (\Exception $exception) {
-//            $outputStyle->error($exception->getMessage());
-//            return self::FAILURE;
-//        }
-//    }
-//
-//    /**
-//     * @return array<string, array<string, 0>>
-//     */
-//    private function getLayerNames(Configuration $configuration): array
-//    {
-//        $layerNames = [];
-//        foreach (
-//            array_map(static fn(ConfigurationLayer $config): string => $config->getName(), $configuration->getLayers())
-//            as $sourceLayerName
-//        ) {
-//            foreach (
-//                $configuration->getRuleset()
-//                    ->getAllowedDependencies($sourceLayerName) as $destinationLayerName
-//            ) {
-//                $layerNames[$sourceLayerName][$destinationLayerName] = 0;
-//            }
-//        }
-//        return $layerNames;
-//    }
-//
-//    /**
-//     * @param  array<string, array<string, int>>  $layerNames
-//     * @return array<array{string}}>
-//     */
-//    private function prepareOutputTable(array $layerNames, int $limit): array
-//    {
-//        $rows = [];
-//        foreach ($layerNames as $dependantLayerName => $dependeeLayers) {
-//            foreach ($dependeeLayers as $dependeeLayerName => $numberOfDependencies) {
-//                if($numberOfDependencies <= $limit) {
-//                    if ($numberOfDependencies === 0) {
-//                        $rows[] = ["<info>$dependantLayerName</info> is not dependant on <info>$dependeeLayerName</info>"];
-//                    } else {
-//                        $rows[] = ["<info>$dependantLayerName</info> is dependant <info>$dependeeLayerName</info> $numberOfDependencies times"];
-//                    }
-//                }
-//            }
-//        }
-//        return $rows;
-//    }
-//
-//}
+namespace DanceEngineer\DeptracAwesome;
+
+use Qossmic\Deptrac\Analyser\AstMapExtractor;
+use Qossmic\Deptrac\Console\Symfony\Style;
+use Qossmic\Deptrac\Dependency\DependencyResolver;
+use Qossmic\Deptrac\Dependency\TokenResolver;
+use Qossmic\Deptrac\Layer\LayerProvider;
+use Qossmic\Deptrac\Layer\LayerResolver;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Stopwatch\Stopwatch;
+use Throwable;
+
+use function array_map;
+
+final class UnusedDependenciesCommand extends Command
+{
+    public static $defaultName = 'unused';
+
+    public static $defaultDescription = 'List unused layer dependencies';
+
+    private AstMapExtractor $astMapExtractor;
+
+    private DependencyResolver $dependencyResolver;
+
+    private LayerResolver $layerResolver;
+
+    private LayerProvider $layerProvider;
+
+    private array $layers;
+
+    private TokenResolver $tokenResolver;
+
+    public function __construct(
+        AstMapExtractor $astMapExtractor,
+        DependencyResolver $dependencyResolver,
+        LayerResolver $layerResolver,
+        LayerProvider $layerProvider,
+        TokenResolver $tokenResolver,
+        array $layers
+    ) {
+        parent::__construct();
+        $this->astMapExtractor    = $astMapExtractor;
+        $this->dependencyResolver = $dependencyResolver;
+        $this->layerResolver      = $layerResolver;
+        $this->layerProvider      = $layerProvider;
+        $this->tokenResolver      = $tokenResolver;
+        $this->layers             = $layers;
+    }
+
+    protected function configure(): void
+    {
+        parent::configure();
+
+        $this->addOption(
+            'limit',
+            'l',
+            InputOption::VALUE_OPTIONAL,
+            'How many times can it be used to be considered unused',
+            0
+        );
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $stopwatch = new Stopwatch();
+        $stopwatch->start('command');
+
+        $outputStyle = new Style(new SymfonyStyle($input, $output));
+        $status      = self::SUCCESS;
+        try {
+            $layerNames = $this->layerResolution($stopwatch, $output);
+
+            $unusedLayerNames = $this->findUnusedDependencies($layerNames, $stopwatch, $output);
+
+            $outputTable = $this->prepareOutputTable($unusedLayerNames, (int)$input->getOption('limit'), $stopwatch, $output);
+
+            $outputStyle->table(['Unused'],$outputTable);
+        } catch (Throwable $exception) {
+            $outputStyle->error($exception->getMessage());
+            $status = self::FAILURE;
+        }
+
+        $output->writeln(
+            sprintf(
+                'The command finished in %1.2f seconds',
+                $stopwatch->stop('command')
+                    ->getDuration() / 1000.0
+            )
+        );
+
+        return $status;
+    }
+
+    /**
+     * @return array<string, array<string, 0>>
+     */
+    private function layerResolution(Stopwatch $stopwatch, OutputInterface $output): array
+    {
+        if ($output->isDebug()) {
+            $stopwatch->start('layerResolution');
+        }
+
+        $layerNames = [];
+        foreach (array_map(static fn(array $layerDef): string => $layerDef['name'], $this->layers) as $sourceLayerName)
+        {
+            foreach (
+                $this->layerProvider->getAllowedLayers($sourceLayerName) as $destinationLayerName
+            ) {
+                $layerNames[$sourceLayerName][$destinationLayerName] = 0;
+            }
+        }
+
+        if ($output->isDebug()) {
+            $output->writeln(
+                sprintf(
+                    '"layerResolution" finished in %1.2f seconds',
+                    $stopwatch->stop('layerResolution')
+                        ->getDuration() / 1000.0
+                )
+            );
+        }
+
+        return $layerNames;
+    }
+
+    /**
+     * @param  array<string, array<string, 0>> $layerNames
+     * @return array<string, array<string, int>>
+     */
+    private function findUnusedDependencies(array $layerNames, Stopwatch $stopwatch, OutputInterface $output): array
+    {
+        if ($output->isDebug()) {
+            $stopwatch->start('findUnusedDependencies');
+        }
+
+        $astMap           = $this->astMapExtractor->extract();
+        $dependencyResult = $this->dependencyResolver->resolve($astMap);
+        foreach ($dependencyResult->getDependenciesAndInheritDependencies() as $dependency) {
+            $dependerLayerNames = $this->layerResolver->getLayersForReference(
+                $this->tokenResolver->resolve($dependency->getDepender(), $astMap),
+                $astMap
+            );
+            foreach ($dependerLayerNames as $dependerLayerName) {
+                $dependentLayerNames = $this->layerResolver->getLayersForReference(
+                    $this->tokenResolver->resolve($dependency->getDependent(), $astMap),
+                    $astMap
+                );
+                foreach ($dependentLayerNames as $dependentLayerName) {
+                    if (array_key_exists($dependerLayerName, $layerNames)
+                        && array_key_exists($dependentLayerName, $layerNames[$dependerLayerName])
+                    ) {
+                        $layerNames[$dependerLayerName][$dependentLayerName] += 1;
+                    }
+                }
+            }
+        }
+
+        if ($output->isDebug()) {
+            $output->writeln(
+                sprintf(
+                    '"findUnusedDependencies" finished in %1.2f seconds',
+                    $stopwatch->stop('findUnusedDependencies')
+                        ->getDuration() / 1000.0
+                )
+            );
+        }
+
+        return $layerNames;
+    }
+
+    /**
+     * @param  array<string, array<string, int>>  $layerNames
+     * @return array<array{string}}>
+     */
+    private function prepareOutputTable(array $layerNames, int $limit, Stopwatch $stopwatch, OutputInterface $output): array
+    {
+        if ($output->isDebug()) {
+            $stopwatch->start('prepareOutputTable');
+        }
+
+        $rows = [];
+        foreach ($layerNames as $dependerLayerName => $dependentLayerNames) {
+            foreach ($dependentLayerNames as $dependentLayerName => $numberOfDependencies) {
+                if ($numberOfDependencies <= $limit) {
+                    if ($numberOfDependencies === 0) {
+                        $rows[] = [
+                            "<info>$dependerLayerName</info> layer is not dependant on <info>$dependentLayerName</info>",
+                        ];
+                    } else {
+                        $rows[] = [
+                            "<info>$dependerLayerName</info> layer is dependent <info>$dependentLayerName</info> layer $numberOfDependencies times",
+                        ];
+                    }
+                }
+            }
+        }
+
+        if ($output->isDebug()) {
+            $output->writeln(
+                sprintf(
+                    '"prepareOutputTable" finished in %1.2f seconds',
+                    $stopwatch->stop('prepareOutputTable')
+                        ->getDuration() / 1000.0
+                )
+            );
+        }
+
+        return $rows;
+    }
+}

@@ -28,21 +28,29 @@ parameters:
   ruleset:
     Commands:
       - TPCs
-#          
-#services:
-#  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDisplayFormatter
-#    autowire: true
-#    tags:
-#      - output_formatter
-#  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDotFormatter
-#    autowire: true
-#    tags:
-#      - output_formatter
-#  - class: DanceEngineer\DeptracAwesome\GraphVizOutputHtmlFormatter
-#    autowire: true
-#    tags:
-#      - output_formatter
-#  - class: DanceEngineer\DeptracAwesome\GraphVizOutputImageFormatter
-#    autowire: true
-#    tags:
-#      - output_formatter
+    OutputFormatters:
+      - TPCs
+
+services:
+  - class: DanceEngineer\DeptracAwesome\UnusedDependenciesCommand
+    autowire: true
+    tags:
+      - console.command
+    arguments:
+      $layers: '%layers%'
+  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDisplayFormatter
+    autowire: true
+    tags:
+      - output_formatter
+  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDotFormatter
+    autowire: true
+    tags:
+      - output_formatter
+  - class: DanceEngineer\DeptracAwesome\GraphVizOutputHtmlFormatter
+    autowire: true
+    tags:
+      - output_formatter
+  - class: DanceEngineer\DeptracAwesome\GraphVizOutputImageFormatter
+    autowire: true
+    tags:
+      - output_formatter

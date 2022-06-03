@@ -14,7 +14,8 @@
     }
   },
   "require": {
-    "qossmic/deptrac": "dev-main"
+    "qossmic/deptrac": "dev-main",
+    "symfony/stopwatch": "^6.0"
   },
   "require-dev": {
     "phpstan/phpstan": "^1.6",
@@ -34,7 +35,10 @@
     "discard-changes": true,
     "bin-dir": "bin",
     "sort-packages": true,
-    "platform-check": false
+    "platform-check": false,
+    "allow-plugins": {
+      "veewee/composer-run-parallel": true
+    }
   },
   "scripts": {
     "ci": "@parallel sa deps:test cs:test tests:test",
