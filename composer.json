@@ -8,12 +8,19 @@
       "email": "patrick.kusebauch@gmail.com"
     }
   ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/patrickkusebauch/Mermaid-PHP"
+    }
+  ],
   "autoload": {
     "psr-4": {
       "DanceEngineer\\DeptracAwesome\\": "src"
     }
   },
   "require": {
+    "jbzoo/mermaid-php": "dev-master as 2.3.2",
     "qossmic/deptrac": "dev-main",
     "symfony/stopwatch": "^6.0"
   },
