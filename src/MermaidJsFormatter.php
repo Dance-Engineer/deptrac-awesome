@@ -78,7 +78,7 @@ class MermaidJsFormatter implements OutputFormatterInterface
             foreach ($layersDependOn as $layerDependOn => $layerDependOnCount) {
                 $edge = new Link($nodes[$layer], $nodes[$layerDependOn]);
                 $label = 0;
-                if (array_key_exists($layerDependOn, $layerViolations[$layer])) {
+                if (array_key_exists($layer,$layerViolations) && array_key_exists($layerDependOn, $layerViolations[$layer])) {
                     $label += $layerViolations[$layer][$layerDependOn];
                     $edge->setType(Link::BIDIRECTIONAL_ARROW);
                     $edge->setStyle(self::VIOLATION_EDGE_STYLE);

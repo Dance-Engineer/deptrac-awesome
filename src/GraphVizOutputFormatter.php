@@ -135,7 +135,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                     $edge->setAttribute('lhead', $this->getSubgraphName($layerDependOn));
                 }
                 $label = 0;
-                if (array_key_exists($layerDependOn, $layerViolations[$layer])) {
+                if (array_key_exists($layer,$layerViolations) && array_key_exists($layerDependOn, $layerViolations[$layer])) {
                     $label += $layerViolations[$layer][$layerDependOn];
                     $edge->setAttribute('color', self::VIOLATION_EDGE_COLOR);
                 } else {
