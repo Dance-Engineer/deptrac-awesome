@@ -112,7 +112,9 @@ class MermaidJsFormatter implements OutputFormatterInterface
     {
         $outputPath = $outputFormatterInput->getOutputPath();
         if ($outputPath !== null) {
+            Node::safeMode(true);
             file_put_contents($outputPath, (string) $graph);
+            Node::safeMode(false);
             $output->writeLineFormatted('<info>Script dumped to ' . realpath($outputPath) . '</info>');
         } else {
             throw new LogicException("No '--output' defined for MermaidJs formatter");
