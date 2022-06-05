@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DanceEngineer\DeptracAwesome;
+namespace DanceEngineer\DeptracAwesome\OutputFormatters;
 
 use LogicException;
 use phpDocumentor\GraphViz\Exception;
@@ -35,7 +35,11 @@ final class GraphVizOutputImageFormatter extends GraphVizOutputFormatter
                 $graph->export($fileType, $imageFile->getPathname());
                 $output->writeLineFormatted('<info>Image dumped to ' . $imageFile->getPathname() . '</info>');
             } catch (Exception $exception) {
-                throw new LogicException('Unable to display output: ' . $exception->getMessage());
+                throw new LogicException(
+                    'Unable to display output: ' . $exception->getMessage(),
+                    $exception->getCode(),
+                    $exception
+                );
             }
         }
     }

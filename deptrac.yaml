@@ -1,60 +1,57 @@
-parameters:
-  paths:
-    - ./src
-    - ./vendor
-  layers:
-    - name: Commands
-      collectors:
-        - type: bool
-          must:
-            - type: extends
-              value: 'Symfony\Component\Console\Command\Command'
-          must_not:
-            - type: directory
-              value: 'vendor'
-    - name: OutputFormatters
-      collectors:
-        - type: bool
-          must:
-            - type: implements
-              value: 'Qossmic\Deptrac\OutputFormatter\OutputFormatterInterface'
-          must_not:
-            - type: directory
-              value: 'vendor'
-    - name: TPCs
-      collectors:
-        - type: directory
-          value: 'vendor/qossmic/deptrac/src'
-  ruleset:
-    Commands:
-      - TPCs
-    OutputFormatters:
-      - TPCs
-
 services:
-  - class: DanceEngineer\DeptracAwesome\DependenciesCommand
+  - class: DanceEngineer\DeptracAwesome\Commands\DependenciesCommand
     autowire: true
     tags:
       - console.command
-  - class: DanceEngineer\DeptracAwesome\UnusedDependenciesCommand
+  - class: DanceEngineer\DeptracAwesome\Commands\UnusedDependenciesCommand
     autowire: true
     tags:
       - console.command
     arguments:
       $layers: '%layers%'
-  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDisplayFormatter
+  - class: DanceEngineer\DeptracAwesome\OutputFormatters\GraphVizOutputDisplayFormatter
     autowire: true
     tags:
       - output_formatter
-  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDotFormatter
+  - class: DanceEngineer\DeptracAwesome\OutputFormatters\GraphVizOutputDotFormatter
     autowire: true
     tags:
       - output_formatter
-  - class: DanceEngineer\DeptracAwesome\GraphVizOutputHtmlFormatter
+  - class: DanceEngineer\DeptracAwesome\OutputFormatters\GraphVizOutputHtmlFormatter
     autowire: true
     tags:
       - output_formatter
-  - class: DanceEngineer\DeptracAwesome\GraphVizOutputImageFormatter
+  - class: DanceEngineer\DeptracAwesome\OutputFormatters\GraphVizOutputImageFormatter
     autowire: true
     tags:
       - output_formatter
+  - class: DanceEngineer\DeptracAwesome\OutputFormatters\MermaidJsFormatter
+    autowire: true
+    tags:
+      - output_formatter
+
+deptrac:
+  paths:
+    - src/
+    - vendor/qossmic/deptrac/src/
+  layers:
+    - name: Commands
+      collectors:
+        - type: directory
+          value: src/Commands/.*
+    - name: OutputFormatters
+      collectors:
+        - type: directory
+          value: src/OutputFormatters/.*
+    - name: TPCs
+      collectors:
+        - type: directory
+          value: vendor/qossmic/deptrac/src/.*
+  ruleset:
+    Commands:
+      - TPCs
+    OutputFormatters:
+      - TPCs
+  analyser:
+    types:
+      - class

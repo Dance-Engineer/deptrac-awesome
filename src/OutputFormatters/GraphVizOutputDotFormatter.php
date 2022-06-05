@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DanceEngineer\DeptracAwesome;
+namespace DanceEngineer\DeptracAwesome\OutputFormatters;
 
 use phpDocumentor\GraphViz\Graph;
 use Qossmic\Deptrac\Configuration\OutputFormatterInput;

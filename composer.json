@@ -8,19 +8,15 @@
       "email": "patrick.kusebauch@gmail.com"
     }
   ],
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/patrickkusebauch/Mermaid-PHP"
-    }
-  ],
+  "platform": {
+    "php": "8.1"
+  },
   "autoload": {
     "psr-4": {
       "DanceEngineer\\DeptracAwesome\\": "src"
     }
   },
   "require": {
-    "jbzoo/mermaid-php": "dev-master as 2.3.2",
     "qossmic/deptrac": "dev-main",
     "symfony/stopwatch": "^6.0"
   },
@@ -36,7 +32,7 @@
     "veewee/composer-run-parallel": "^1.0",
     "slam/phpstan-extensions": "^6.0",
     "ergebnis/phpstan-rules": "^1.0",
-    "vimeo/psalm": "^4.23"
+    "vimeo/psalm": "dev-master as 4.x-dev"
   },
   "config": {
     "discard-changes": true,
@@ -51,8 +47,10 @@
     "ci": "@parallel sa deps:test cs:test tests:test",
     "sa": "@parallel sa:psalm sa:phpstan",
     "deps": "php vendor/qossmic/deptrac/deptrac.php --config-file=deptrac.yaml",
-    "deps:test": "php vendor/qossmic/deptrac/deptrac.php --report-uncovered",
-    "deps:baseline": "php vendor/qossmic/deptrac/deptrac.php --report-uncovered --formatter=baseline --output=./deptrac.baseline.yaml",
+    "deps:test": "php vendor/qossmic/deptrac/deptrac.php --config-file=deptrac.yaml --report-uncovered",
+    "deps:dump": "php vendor/qossmic/deptrac/deptrac.php --config-file=deptrac.yaml --report-uncovered --formatter=graphviz-awesome-image --output=./deptrac.png",
+    "deps:dump-dot": "php vendor/qossmic/deptrac/deptrac.php --config-file=deptrac.yaml --report-uncovered --formatter=graphviz-awesome-dot --output=./deptrac.dot",
+    "deps:baseline": "php vendor/qossmic/deptrac/deptrac.php --config-file=deptrac.yaml --report-uncovered --formatter=baseline --output=./deptrac.baseline.yaml",
     "cs:test": "bin/ecs check",
     "cs:clear": "bin/ecs check --clear-cache",
     "cs:fix": "bin/ecs check --fix",

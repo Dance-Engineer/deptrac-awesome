@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace DanceEngineer\DeptracAwesome;
+namespace DanceEngineer\DeptracAwesome\OutputFormatters;
 
 use LogicException;
 use phpDocumentor\GraphViz\Exception;
 use phpDocumentor\GraphViz\Graph;
 use Qossmic\Deptrac\Configuration\OutputFormatterInput;
+
 use Qossmic\Deptrac\Console\Output;
 
 final class GraphVizOutputDisplayFormatter extends GraphVizOutputFormatter
@@ -40,7 +41,11 @@ final class GraphVizOutputDisplayFormatter extends GraphVizOutputFormatter
             }
             $next = microtime(true) + (float) self::DELAY_OPEN;
         } catch (Exception|\RuntimeException $exception) {
-            throw new LogicException('Unable to display output: ' . $exception->getMessage());
+            throw new LogicException(
+                'Unable to display output: ' . $exception->getMessage(),
+                (int) $exception->getCode(),
+                $exception
+            );
         }
     }
 }

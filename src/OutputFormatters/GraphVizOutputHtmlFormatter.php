@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DanceEngineer\DeptracAwesome;
+namespace DanceEngineer\DeptracAwesome\OutputFormatters;
 
 use function base64_encode;
 use function file_get_contents;
@@ -10,6 +10,7 @@ use LogicException;
 use phpDocumentor\GraphViz\Exception;
 use phpDocumentor\GraphViz\Graph;
 use Qossmic\Deptrac\Configuration\OutputFormatterInput;
+
 use Qossmic\Deptrac\Console\Output;
 use RuntimeException;
 
@@ -29,7 +30,11 @@ final class GraphVizOutputHtmlFormatter extends GraphVizOutputFormatter
         try {
             $filename = $this->getTempImage($graph);
         } catch (Exception|RuntimeException $exception) {
-            throw new LogicException('Unable to generate HTML file: ' . $exception->getMessage());
+            throw new LogicException(
+                'Unable to generate HTML file: ' . $exception->getMessage(),
+                (int) $exception->getCode(),
+                $exception
+            );
         }
         $imageData = file_get_contents($filename);
         if ($imageData === false) {

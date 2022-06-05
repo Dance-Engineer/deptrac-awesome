@@ -1,17 +1,16 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
-namespace DanceEngineer\DeptracAwesome;
+namespace DanceEngineer\DeptracAwesome\OutputFormatters;
 
 use Qossmic\Deptrac\Result\CoveredRule;
 use Qossmic\Deptrac\Result\Rule;
 use Qossmic\Deptrac\Result\Uncovered;
 use Qossmic\Deptrac\Result\Violation;
 
-class GraphUtils
+abstract class GraphUtils
 {
-
     /**
      * @param Violation[] $violations
      *
@@ -69,5 +68,4 @@ class GraphUtils
 
         return $layersDependOnLayers;
     }
-
 }

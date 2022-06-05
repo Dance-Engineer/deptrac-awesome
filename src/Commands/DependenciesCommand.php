@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DanceEngineer\DeptracAwesome;
+namespace DanceEngineer\DeptracAwesome\Commands;
 
 use Exception;
 use Qossmic\Deptrac\Analyser\AstMapExtractor;
@@ -65,14 +65,12 @@ final class DependenciesCommand extends Command
         $stopwatch->start('command');
 
         $outputStyle = new Style(new SymfonyStyle($input, $output));
-        $status      = self::SUCCESS;
+        $status = self::SUCCESS;
         try {
+            /** @var ?string $target */
             $target = $input->getArgument('targetLayer');
 
-            $dependencies = $this->getDependencies(
-                (string) $input->getArgument('layer'),
-                $target === null ? null : (string) $target
-            );
+            $dependencies = $this->getDependencies((string) $input->getArgument('layer'), $target);
 
             foreach ($dependencies as $layer => $violations) {
                 $outputStyle->table(
@@ -88,7 +86,7 @@ final class DependenciesCommand extends Command
         $output->writeln(
             sprintf(
                 'The command finished in %1.2f seconds',
-                $stopwatch->stop('command')
+                (float) $stopwatch->stop('command')
                     ->getDuration() / 1000.0
             )
         );
@@ -123,7 +121,6 @@ final class DependenciesCommand extends Command
      */
     private function getDependencies(string $layer, ?string $targetLayer): array
     {
-
         $result = [];
         $astMap = $this->astMapExtractor->extract();
         $dependencies = $this->dependencyResolver->resolve($astMap);

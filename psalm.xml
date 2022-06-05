@@ -17,4 +17,8 @@
     <ignoreExceptions>
         <classAndDescendants name="LogicException"/>
     </ignoreExceptions>
+    <issueHandlers>
+        <InternalClass errorLevel="suppress"/>
+        <InternalMethod errorLevel="suppress"/>
+    </issueHandlers>
 </psalm>

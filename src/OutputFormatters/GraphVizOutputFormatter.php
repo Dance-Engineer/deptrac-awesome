@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DanceEngineer\DeptracAwesome;
+namespace DanceEngineer\DeptracAwesome\OutputFormatters;
 
 use phpDocumentor\GraphViz\AttributeNotFound;
 use phpDocumentor\GraphViz\Edge;
@@ -16,6 +16,7 @@ use Qossmic\Deptrac\Console\Output;
 use Qossmic\Deptrac\OutputFormatter\OutputFormatterInterface;
 use Qossmic\Deptrac\Result\LegacyResult;
 use RuntimeException;
+
 use function sys_get_temp_dir;
 use function tempnam;
 
@@ -93,7 +94,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                 $nodes[$layer] = new Node($layer);
             }
 
-            foreach ($layersDependOn as $layerDependOn => $_) {
+            foreach (array_keys($layersDependOn) as $layerDependOn) {
                 if (in_array($layerDependOn, $hiddenLayers, true)) {
                     continue;
                 }
@@ -135,7 +136,10 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                     $edge->setAttribute('lhead', $this->getSubgraphName($layerDependOn));
                 }
                 $label = 0;
-                if (array_key_exists($layer,$layerViolations) && array_key_exists($layerDependOn, $layerViolations[$layer])) {
+                if (array_key_exists($layer, $layerViolations) && array_key_exists(
+                    $layerDependOn,
+                    $layerViolations[$layer]
+                )) {
                     $label += $layerViolations[$layer][$layerDependOn];
                     $edge->setAttribute('color', self::VIOLATION_EDGE_COLOR);
                 } else {
@@ -151,7 +155,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
             try {
                 $edgeColor = $edge->getAttribute('color')
                     ->getValue();
-            } catch (AttributeNotFound $_) {
+            } catch (AttributeNotFound) {
                 $edgeColor = null;
             }
             if (array_key_exists($otherKey, $edges) && $edgeColor !== self::VIOLATION_EDGE_COLOR) {
@@ -159,7 +163,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                 try {
                     $otherEdgeColor = $otherEdge->getAttribute('color')
                         ->getValue();
-                } catch (AttributeNotFound $_) {
+                } catch (AttributeNotFound) {
                     $otherEdgeColor = null;
                 }
                 if ($otherEdgeColor !== self::VIOLATION_EDGE_COLOR) {
@@ -173,7 +177,7 @@ abstract class GraphVizOutputFormatter implements OutputFormatterInterface
                         $edge->setAttribute('dir', 'both');
                         $edge->setAttribute('color', 'blue');
                         unset($edges[$otherKey]);
-                    } catch (AttributeNotFound $_) {
+                    } catch (AttributeNotFound) {
                     }
                 }
             }
