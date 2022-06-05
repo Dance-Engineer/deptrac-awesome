@@ -6,25 +6,71 @@ This collection has only been tested when using Deptrac from source and not from
 
 ## Not for production use warning
 
-The extension points of Deptrac are not stable yet, Deptrac itself did not even have a major release. For that reason code here may break at any moment just by virtue of updating Deptrac. 
+The extension points of Deptrac are not stable yet, Deptrac itself did not even have a major release. For that reason
+code here may break at any moment just by virtue of updating Deptrac.
 
-This library does not and will not pin down (but may require a minimal) version of Deptrac to prevent any inconsistencies.
+## Commands
 
-Use at your own risk. Should not use for production services but only as a manual "debugging" tool.
-
-## Usage
-Just add the following section into your `deptrac.yaml`:
+### DependenciesCommand
 
 ```yaml
 services:
-  - class: DanceEngineer\DeptracAwesome\DependenciesCommand
+  - class: DanceEngineer\DeptracAwesome\Commands\DependenciesCommand
     autowire: true
     tags:
       - console.command
-  - class: DanceEngineer\DeptracAwesome\UnusedDependenciesCommand
+```
+
+Shows you all dependencies of your layer. You can optionally specify a target layer to get only dependencies from one to
+the other:
+
+```shell
+deptrac.php dependencies <layer> <?target layer>
+```
+
+### UnusedDependenciesCommand
+
+```yaml
+services:
+  - class: DanceEngineer\DeptracAwesome\Commands\UnusedDependenciesCommand
     autowire: true
     tags:
       - console.command
+    arguments:
+      $layers: '%layers%'
+```
+
+Show you all the allowed dependencies that are currently not being taken advantage of:
+
+```shell
+deptrac.php unused <?--limit=0>
+```
+
+You can optionally specify a limit of how many times can be the dependency used to be considered unused. This is useful
+if you want to find dependencies that are barely used and may be a prime candidate to get rid of.
+
+## OutputFormatters
+
+### Mermaid-js formatter
+
+```yaml
+services:
+  - class: DanceEngineer\DeptracAwesome\GraphVizOutputDisplayFormatter
+    autowire: true
+    tags:
+      - output_formatter
+```
+
+Generates a MarkDown compatible Mermaid-js graph:
+
+```shell
+deptrac.php --config-file=deptrac-yaml --formatter=mermaid-js --output=mermaid.md
+```
+
+### Graphviz formatters
+
+```yaml
+services:
   - class: DanceEngineer\DeptracAwesome\GraphVizOutputDisplayFormatter
     autowire: true
     tags:
@@ -43,22 +89,9 @@ services:
       - output_formatter
 ```
 
-### DependenciesCommand
-Shows you all dependencies of your layer. You can optionally specify a target layer to get only dependencies from one to the other:
-```shell
-deptrac.php dependencies <layer> <?target layer>
-```
-
-### UnusedDependenciesCommand
-Show you all the allowed dependencies that are currently not being taken advantage of:
-```shell
-deptrac.php unused <?--limit=0>
-```
-
-You can optionally specify a limit of how many times can be the dependency used to be considered unused. This is useful if you want to find dependencies that are barely used and may be a prime candidate to get rid of. 
-
-### Graphviz formatters
 Improved Graphviz formatters with these additional features:
- - bidirectional edges between nodes are not shown as 2 separate arrows (unless there is a violation), but as on bidirectional blue arrow with the sum of dependencies from both.
+
+- bidirectional edges between nodes are not shown as 2 separate arrows (unless there is a violation), but as on
+  bidirectional blue arrow with the sum of dependencies from both.
 
 Used the same way as regular formatters, but with `graphviz-awesome-` prefix instead of `graphviz-`
